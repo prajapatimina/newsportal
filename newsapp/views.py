@@ -7,11 +7,10 @@ from .models import PostModel, CategoryModel
 def index(request):
     posts = PostModel.objects.all()[:10]
     categories = CategoryModel.objects.all()[:5]
-    featured_post = posts[0]
     context = {
         'posts' : posts,
         'categories': categories,
-        'featured_post': featured_post
+        'featured_post': posts[0] if len(posts) > 0 else None
     }
     return render(request, 'newsapp/index.html', context)
 
@@ -29,11 +28,10 @@ def categorynews(request, id):
     if category:
         posts = PostModel.objects.filter(category=category)
         categories = CategoryModel.objects.all()[:5]
-        featured_post = posts[0]
         context = {
             'posts': posts,
             'categories': categories,
-            'featured_post' : featured_post
+            'featured_post' :posts[0] if len(posts) > 0 else None
         }
         return render(request, 'newsapp/index.html', context)
     else:
