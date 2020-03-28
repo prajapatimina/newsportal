@@ -1,7 +1,14 @@
 {% extends 'newsapp/base.html' %}
 
 {% block main_content %}
-    <h1>{{post.title}}</h1>
+    <h1>
+        {{post.title}}
+
+
+        {% if post.posted_by.auth.id == request.user.id %}
+        <a href="{% url 'delete_post' post.id %}"><button class="btn btn-danger" type="button">Delete</button></a>
+        {% endif %}
+    </h1>
     <img src="{{post.header_image.url}}" style="width: 40%;">
     <br>
     {{post.content}}

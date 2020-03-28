@@ -1,8 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 import datetime
 from django.contrib.auth.decorators import login_required
 
 from .models import PostModel, CategoryModel
+
+from django.contrib.auth.decorators import login_required
 
 def index(request):
     posts = PostModel.objects.all()[:10]
@@ -35,4 +37,30 @@ def categorynews(request, id):
         }
         return render(request, 'newsapp/index.html', context)
     else:
+        return render(request, 'newsapp/error404.html')
+
+@login_required
+    
+def add_post_view(request):
+    categories = CategoryModel.objects.all()[:5]
+    context={
+        'categories':categories
+    }
+
+    return render(request, 'newsapp/add_post.html', context)
+
+@login_required
+def delete_post_view(request, id):
+    post = PostModel.objects.filter(id=id).first()
+    if post:
+        logged_in_user_id = request.user.id
+        post_user_id = post.posted_by.auth.id
+        if logged_in_user_id == post_user_id:
+            post.delete()
+            #send user to index
+            return redirect('index')
+        else:
+            return render(request, 'newsapp/error404.html')
+    else:
+        #there is no post with that id
         return render(request, 'newsapp/error404.html')
