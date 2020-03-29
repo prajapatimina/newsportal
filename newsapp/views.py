@@ -3,19 +3,31 @@ import datetime
 from django.contrib.auth.decorators import login_required
 
 from .models import PostModel, CategoryModel
-from .forms import AddPostForm
+from .forms import PostForm
 from userapp.models import UserModel
 from django.contrib.auth.models import User
 
 from django.contrib.auth.decorators import login_required
 
+import random
+
+def get_featured_post(posts):
+    if len(posts) == 0:
+        return None
+    else:
+        num_of_posts = len(posts)
+    featured_post_index = random.randint(0,num_of_posts-1)
+    return posts[featured_post_index]
+
+
 def index(request):
-    posts = PostModel.objects.all()[:10]
+    posts = PostModel.objects.all().order_by('-posted_on','title','posted_by')[:10]
     categories = CategoryModel.objects.all()[:5]
+    
     context = {
         'posts' : posts,
         'categories': categories,
-        'featured_post': posts[0] if len(posts) > 0 else None
+        'featured_post': get_featured_post(posts)
     }
     return render(request, 'newsapp/index.html', context)
 
@@ -36,7 +48,8 @@ def categorynews(request, id):
         context = {
             'posts': posts,
             'categories': categories,
-            'featured_post' :posts[0] if len(posts) > 0 else None
+            'featured_post' :posts[0] if len(posts) > 0 else None,
+            'current_category_id':id
         }
         return render(request, 'newsapp/index.html', context)
     else:
@@ -46,7 +59,7 @@ def categorynews(request, id):
 @login_required    
 def add_post_view(request):
     if request.method == "POST":
-        form = AddPostForm(request.POST,request.FILES)
+        form = PostForm(request.POST,request.FILES)
         if form.is_valid():
             #now write logic to add the form
             post = form.save(commit=False)
@@ -59,7 +72,7 @@ def add_post_view(request):
             #this mean the form has error.send user back to same user
             return render(request,'newsapp/add_pst.html', {'form':form})
     else:
-        form= AddPostForm()
+        form= PostForm()
         categories = CategoryModel.objects.all()[:5]
         context={
             'categories':categories,
@@ -83,3 +96,50 @@ def delete_post_view(request, id):
     else:
         #there is no post with that id
         return render(request, 'newsapp/error404.html')
+
+@login_required
+def edit_post_view(request,id):
+    if request.method == "POST":
+        # form =PostForm(request.POST, request.FILES)
+        post = PostModel.objects.filter(id=id).first()
+        if post:
+            current_user_id =request.user.id
+            post_user_id =post.posted_by.auth.id
+            if current_user_id == post_user_id:
+                form = PostForm(request.POST,request.FILES, instance=post)
+                if form.is_valid():
+                    form.save()
+                    return redirect('detail', post.id)
+                else:
+                    #form is not valid
+                    return(request, 'newsapp/edit_post.html', {'form':form})
+            else:
+                return(request, 'newsapp/error404.html')
+
+
+        else:
+             return(request, 'newsapp/error404.html')
+
+    else:
+            post = PostModel.objects.filter(id=id).first()
+            if post:
+                form = PostForm(instance=post)
+                
+                return render(request, 'newsapp/edit_post.html',{'form':form})
+            else:
+                return render(request, 'newsapp/error404.html')
+
+def search_view(request):
+    print('I m here.')
+    categories = CategoryModel.objects.all()[:5]
+    query = request.GET.get('query')
+    results_in_title= PostModel.objects.filter(title__icontains=query)
+    results_in_content= PostModel.objects.filter(content__icontains=query)
+
+    results = (results_in_content | results_in_title).distinct()
+    context ={
+        'posts': results,
+        'search_query': query,
+        'categories':categories
+    }
+    return render(request, 'newsapp/search_results.html',context)

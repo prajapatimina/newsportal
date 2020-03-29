@@ -6,6 +6,7 @@
 
 
         {% if post.posted_by.auth.id == request.user.id %}
+        <a href="{% url 'edit_post' post.id %}"><button class="btn btn-primary" type="button">Edit</button></a>
         <a href="{% url 'delete_post' post.id %}"><button class="btn btn-danger" type="button">Delete</button></a>
         {% endif %}
     </h1>

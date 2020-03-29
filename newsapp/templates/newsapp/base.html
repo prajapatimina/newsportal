@@ -55,6 +55,7 @@
         <ul class="navbar-nav">
           {% for category in categories %}
           <li class="nav-item">
+          <!-- <li class="nav-item {% if current_category_id == category.id %}active{% endif %}"> -->
             <a class="nav-link" href="{% url 'topic' category.id %}">
               {{category.name}}
             </a>
@@ -62,8 +63,8 @@
           {% endfor %}
         </ul>
       </div>
-      <form class="form-inline">
-        <input
+      <form method="GET" action="{% url 'search' %}" class="form-inline">
+        <input name="query"
           class="form-control mr-sm-2"
           type="search"
           placeholder="Search"
@@ -84,8 +85,11 @@
       
       {% endif %}
     </nav>
+    <div>
+      {% block main_content %} {% endblock %}
+    </div>
 
-    {% block main_content %} {% endblock %}
+    
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
