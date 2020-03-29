@@ -3,6 +3,9 @@ import datetime
 from django.contrib.auth.decorators import login_required
 
 from .models import PostModel, CategoryModel
+from .forms import AddPostForm
+from userapp.models import UserModel
+from django.contrib.auth.models import User
 
 from django.contrib.auth.decorators import login_required
 
@@ -39,15 +42,31 @@ def categorynews(request, id):
     else:
         return render(request, 'newsapp/error404.html')
 
-@login_required
-    
-def add_post_view(request):
-    categories = CategoryModel.objects.all()[:5]
-    context={
-        'categories':categories
-    }
 
-    return render(request, 'newsapp/add_post.html', context)
+@login_required    
+def add_post_view(request):
+    if request.method == "POST":
+        form = AddPostForm(request.POST,request.FILES)
+        if form.is_valid():
+            #now write logic to add the form
+            post = form.save(commit=False)
+            django_user = User.objects.filter(id= request.user.id).first()
+            current_user = UserModel.objects.filter(auth=django_user).first()
+            post.posted_by = current_user
+            post.save()
+            return redirect('index')
+        else:
+            #this mean the form has error.send user back to same user
+            return render(request,'newsapp/add_pst.html', {'form':form})
+    else:
+        form= AddPostForm()
+        categories = CategoryModel.objects.all()[:5]
+        context={
+            'categories':categories,
+            'form':form
+        }
+
+        return render(request, 'newsapp/add_post.html', context)
 
 @login_required
 def delete_post_view(request, id):
