@@ -144,24 +144,72 @@ def search_view(request):
     }
     return render(request, 'newsapp/search_results.html',context)
 
+@login_required
 def add_comments_view(request,id):
-    posts = PostModel.objects.filter(id=id)
+    posts = PostModel.objects.filter(id=id).first()
    #comments = posts.comments.filter(active=True)
     if request.method == 'POST':
-        comment_form = CommentModel(request.POST)
+        comment_form = CommentForm(request.POST)
         if comment_form.is_valid():
 
             # Create Comment object but don't save to database yet
             new_comment = comment_form.save(commit=False)
             # Assign the current post to the comment
-            new_comment.posts = posts
+            new_comment.parent_post = posts
             # Save the comment to the database
             new_comment.save()
-            return redirect('detail')
+            return redirect('detail',id)
         
            
     else:
         comment_form = CommentForm()
       
 
-        return render(request,{'form':comment_form})
+        return render(request, 'newsapp/add_comments.html', {'form':comment_form})
+
+@login_required
+def delete_comment_view(request, id):
+    comment = CommentModel.objects.filter(id=id).first()
+    if comment:
+        logged_in_user_id = request.user.id
+        comment_user_id = comment.commented_by.auth.id
+        if logged_in_user_id == comment_user_id:
+            comment.delete()
+            #send user to detail
+            return redirect('detail',comment.parent_post.id)
+        else:
+            return render(request, 'newsapp/error404.html')
+    else:
+        #there is no post with that id
+        return render(request, 'newsapp/error404.html')
+
+@login_required
+def edit_comment_view(request,id):
+    if request.method == "POST":
+        comment = CommentModel.objects.filter(id=id).first()
+        if comment:
+            current_user_id =request.user.id
+            comment_user_id =comment.commented_by.auth.id
+            if current_user_id == comment_user_id:
+                form = CommentForm(request.POST,request.FILES, instance=comment)
+                if form.is_valid():
+                    form.save()
+                    return redirect('detail', comment.parent_post.id)
+                else:
+                    #form is not valid
+                    return(request, 'newsapp/edit_comment.html', {'form':form})
+            else:
+                return(request, 'newsapp/error404.html')
+
+
+        else:
+             return(request, 'newsapp/error404.html')
+
+    else:
+            comment = CommentModel.objects.filter(id=id).first()
+            if comment:
+                form = CommentForm(instance=comment)
+                
+                return render(request, 'newsapp/edit_comment.html',{'form':form})
+            else:
+                return render(request, 'newsapp/error404.html')

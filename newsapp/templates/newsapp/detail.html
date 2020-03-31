@@ -21,11 +21,13 @@
         By: {{comment.commented_by}}<br>
         On: {{comment.commented_on}}<br>
         Comment: {{comment.content}}
+        <a href="{% url 'edit_comment' comment.id %}"><button class="btn btn-primary" type="button">Edit</button></a>
+        <a href="{% url 'delete_comment' comment.id %}"><button class="btn btn-danger" type="button">Delete</button></a>
         <br>
         <br>
     {% endfor %}
 
-    <a href="{% url 'addcomment' %}">
+    <a href="{% url 'addcomment' post.id %}">
         <button style="margin: 4px;" class="btn btn-outline-success my-2 my-sm-0" >
           Add Comment
         </button>

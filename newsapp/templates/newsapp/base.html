@@ -55,7 +55,7 @@
         <ul class="navbar-nav">
           {% for category in categories %}
           <li class="nav-item">
-          <!-- <li class="nav-item {% if current_category_id == category.id %}active{% endif %}"> -->
+          <li class="nav-item {% if current_category_id == category.id %} active {% endif %}">
             <a class="nav-link" href="{% url 'topic' category.id %}">
               {{category.name}}
             </a>
