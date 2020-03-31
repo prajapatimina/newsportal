@@ -2,8 +2,8 @@ from django.shortcuts import render,redirect
 import datetime
 from django.contrib.auth.decorators import login_required
 
-from .models import PostModel, CategoryModel
-from .forms import PostForm
+from .models import PostModel, CategoryModel,CommentModel
+from .forms import PostForm,CommentForm
 from userapp.models import UserModel
 from django.contrib.auth.models import User
 
@@ -59,10 +59,10 @@ def categorynews(request, id):
 @login_required    
 def add_post_view(request):
     if request.method == "POST":
-        form = PostForm(request.POST,request.FILES)
-        if form.is_valid():
+        post_form = PostForm(request.POST,request.FILES)
+        if post_form.is_valid():
             #now write logic to add the form
-            post = form.save(commit=False)
+            post = post_form.save(commit=False)
             django_user = User.objects.filter(id= request.user.id).first()
             current_user = UserModel.objects.filter(auth=django_user).first()
             post.posted_by = current_user
@@ -70,7 +70,7 @@ def add_post_view(request):
             return redirect('index')
         else:
             #this mean the form has error.send user back to same user
-            return render(request,'newsapp/add_pst.html', {'form':form})
+            return render(request,'newsapp/add_pst.html', {'form':post_form})
     else:
         form= PostForm()
         categories = CategoryModel.objects.all()[:5]
@@ -143,3 +143,25 @@ def search_view(request):
         'categories':categories
     }
     return render(request, 'newsapp/search_results.html',context)
+
+def add_comments_view(request,id):
+    posts = PostModel.objects.filter(id=id)
+   #comments = posts.comments.filter(active=True)
+    if request.method == 'POST':
+        comment_form = CommentModel(request.POST)
+        if comment_form.is_valid():
+
+            # Create Comment object but don't save to database yet
+            new_comment = comment_form.save(commit=False)
+            # Assign the current post to the comment
+            new_comment.posts = posts
+            # Save the comment to the database
+            new_comment.save()
+            return redirect('detail')
+        
+           
+    else:
+        comment_form = CommentForm()
+      
+
+        return render(request,{'form':comment_form})
